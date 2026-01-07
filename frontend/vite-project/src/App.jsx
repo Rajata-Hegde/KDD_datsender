@@ -6,6 +6,7 @@ import AttackReport from "./pages/AttackReport"; // 1. IMPORT
 import Footer from "./components/Footer";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
+import NetworkLogs from "./pages/NetworkLogs";
 
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -41,6 +42,7 @@ export default function App() {
             {activePage} :: INITIALIZING...
           </div>
         )}
+        <NetworkLogs/>
       </main>
 
       <Footer/>
