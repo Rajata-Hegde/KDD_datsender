@@ -3,6 +3,7 @@ import Dashboard from "./pages/Dashboard";
 import ModelPerformance from "./pages/ModelPerformance";
 import AboutSystem from "./pages/AboutSystem";
 import AttackReport from "./pages/AttackReport"; // 1. IMPORT
+import MLFeatures from "./pages/MLFeatures"; // Import ML Features page
 import Footer from "./components/Footer";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
@@ -33,6 +34,8 @@ export default function App() {
           <Dashboard />
         ) : activePage === "Model Performance" ? (
           <ModelPerformance />
+        ) : activePage === "ML Features" ? (
+          <MLFeatures />
         ) : activePage === "About System" ? (
           <AboutSystem />
         ) : activePage === "Attack Reports" ? ( // ENSURE THIS MATCHES SIDEBAR STRING

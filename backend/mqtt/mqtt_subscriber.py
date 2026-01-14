@@ -1,13 +1,172 @@
 import json
 import paho.mqtt.client as mqtt
+import threading
+import time
+from models.classifier import get_classifier
+from collections import defaultdict
+from datetime import datetime
+
+# Global statistics
+network_stats = {
+    'total_packets': 0,
+    'attack_count': 0,
+    'packets_per_sec': 0,
+    'active_sessions': set(),
+    'attack_distribution': defaultdict(int),
+    'recent_attacks': [],
+    'last_packet_time': time.time()
+}
+
+def process_packet_data(data, socketio):
+    """Process packet data (used by both MQTT and HTTP injection)"""
+    try:
+        classifier = get_classifier()
+        
+        # Prepare features for classification (20 selected features required by trained model)
+        features = {
+            'src_bytes': float(data.get('src_bytes', 0)),
+            'same_srv_rate': float(data.get('same_srv_rate', 0)),
+            'flag': data.get('flag', 'S0'),
+            'dst_host_serror_rate': float(data.get('dst_host_serror_rate', 0)),
+            'srv_serror_rate': float(data.get('srv_serror_rate', 0)),
+            'dst_host_same_srv_rate': float(data.get('dst_host_same_srv_rate', 0.5)),
+            'diff_srv_rate': float(data.get('diff_srv_rate', 0)),
+            'count': float(data.get('packet_count', data.get('count', 1))),
+            'dst_host_srv_serror_rate': float(data.get('dst_host_srv_serror_rate', 0)),
+            'serror_rate': float(data.get('serror_rate', 0)),
+            'dst_host_same_src_port_rate': float(data.get('dst_host_same_src_port_rate', 0)),
+            'dst_host_srv_diff_host_rate': float(data.get('dst_host_srv_diff_host_rate', 0)),
+            'dst_bytes': float(data.get('dst_bytes', data.get('length', 0))),
+            'dst_host_diff_srv_rate': float(data.get('dst_host_diff_srv_rate', 0)),
+            'protocol_type': data.get('protocol', 'tcp'),
+            'dst_host_srv_count': float(data.get('dst_host_srv_count', 1)),
+            'service': data.get('service', 'http'),
+            'srv_count': float(data.get('srv_count', 1)),
+            'dst_host_count': float(data.get('dst_host_count', 1)),
+            'dst_host_rerror_rate': float(data.get('dst_host_rerror_rate', 0)),
+        }
+        
+        # Get classification
+        classification = classifier.classify_packet(features)
+        
+        # Update statistics
+        network_stats['total_packets'] += 1
+        session_key = f"{data.get('src_ip', '')}:{data.get('dst_ip', '')}"
+        network_stats['active_sessions'].add(session_key)
+        
+        is_attack = classification['attack_type'] != 'normal'
+        if is_attack:
+            network_stats['attack_count'] += 1
+            network_stats['attack_distribution'][classification['attack_type']] += 1
+        
+        # Prepare enriched data
+        enriched_data = {
+            **data,
+            'attack_type': classification['attack_type'],
+            'attack_category': classification['category'],
+            'confidence': classification['confidence'],
+            'is_attack': is_attack,
+            'timestamp': data.get('timestamp', datetime.now().isoformat()),
+            # Include all ML features used for classification
+            'ml_features': {
+                'src_bytes': features['src_bytes'],
+                'dst_bytes': features['dst_bytes'],
+                'count': features['count'],
+                'srv_count': features['srv_count'],
+                'serror_rate': features['serror_rate'],
+                'srv_serror_rate': features['srv_serror_rate'],
+                'rerror_rate': features.get('rerror_rate', 0),
+                'same_srv_rate': features['same_srv_rate'],
+                'diff_srv_rate': features['diff_srv_rate'],
+                'dst_host_count': features['dst_host_count'],
+                'dst_host_serror_rate': features['dst_host_serror_rate'],
+                'dst_host_same_srv_rate': features['dst_host_same_srv_rate'],
+                'dst_host_diff_srv_rate': features['dst_host_diff_srv_rate'],
+                'dst_host_same_src_port_rate': features['dst_host_same_src_port_rate'],
+                'dst_host_srv_diff_host_rate': features['dst_host_srv_diff_host_rate'],
+                'dst_host_srv_count': features['dst_host_srv_count'],
+                'dst_host_rerror_rate': features['dst_host_rerror_rate'],
+                'protocol_type': features['protocol_type'],
+                'service': features['service'],
+                'flag': features['flag'],
+            }
+        }
+        
+        # Track recent attacks
+        if is_attack:
+            network_stats['recent_attacks'].insert(0, enriched_data)
+            network_stats['recent_attacks'] = network_stats['recent_attacks'][:100]  # Keep last 100
+        
+        # Calculate packets per second
+        current_time = time.time()
+        if current_time - network_stats['last_packet_time'] > 1:
+            network_stats['packets_per_sec'] = network_stats['total_packets']
+            network_stats['last_packet_time'] = current_time
+        
+        # Emit to frontend
+        socketio.emit("network_logs", enriched_data)
+        socketio.emit("stats_update", {
+            'total_packets': network_stats['total_packets'],
+            'attack_count': network_stats['attack_count'],
+            'packets_per_sec': network_stats['packets_per_sec'],
+            'active_sessions': len(network_stats['active_sessions']),
+            'attack_distribution': dict(network_stats['attack_distribution'])
+        })
+        
+        print(f"[{enriched_data['timestamp'].split('T')[1][:8]}] {data.get('src_ip')} → {data.get('dst_ip')} | "
+              f"Type: {classification['attack_type']} | Confidence: {classification['confidence']}%")
+        
+    except Exception as e:
+        print(f"Error processing packet: {e}")
 
 def start_mqtt(socketio):
     def on_message(client, userdata, msg):
-        data = json.loads(msg.payload.decode())
-        socketio.emit("network_logs", data)
+        try:
+            data = json.loads(msg.payload.decode())
+            process_packet_data(data, socketio)
+        except json.JSONDecodeError:
+            print(f"Invalid JSON received: {msg.payload}")
+        except Exception as e:
+            print(f"Error processing message: {e}")
 
     client = mqtt.Client()
-    client.connect("broker.hivemq.com", 1883, 60)
-    client.subscribe("nids/live_packets")
     client.on_message = on_message
-    client.loop_start()
+
+    def try_connect():
+        for attempt in range(1, 6):
+            try:
+                client.connect("broker.hivemq.com", 1883, 60)
+                client.subscribe("nids/live_packets")
+                client.loop_start()
+                print(f"MQTT connected on attempt {attempt}")
+                return
+            except Exception as e:
+                print(f"MQTT connect attempt {attempt} failed: {e}")
+                time.sleep(5)
+        print("MQTT: all connect attempts failed — continuing without MQTT")
+
+    threading.Thread(target=try_connect, daemon=True).start()
+
+def get_stats():
+    """Return current network statistics"""
+    return {
+        'total_packets': network_stats['total_packets'],
+        'attack_count': network_stats['attack_count'],
+        'packets_per_sec': network_stats['packets_per_sec'],
+        'active_sessions': len(network_stats['active_sessions']),
+        'attack_distribution': dict(network_stats['attack_distribution']),
+        'recent_attacks': network_stats['recent_attacks']
+    }
+
+def reset_stats():
+    """Reset all statistics"""
+    global network_stats
+    network_stats = {
+        'total_packets': 0,
+        'attack_count': 0,
+        'packets_per_sec': 0,
+        'active_sessions': set(),
+        'attack_distribution': defaultdict(int),
+        'recent_attacks': [],
+        'last_packet_time': time.time()
+    }
