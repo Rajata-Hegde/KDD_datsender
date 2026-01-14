@@ -301,27 +301,6 @@ This:
 
 ---
 
-## 📈 Model Performance
-
-```
-Algorithm: Random Forest (200 trees)
-Training Samples: 41,093
-Features Used: 20 selected
-Test Accuracy: ~94%
-
-DoS Detection: 96%
-Probe Detection: 92%
-R2L Detection: 89%
-U2R Detection: 85%
-Normal Traffic: 97%
-```
-
-**Note:** The model analyzes 20 network features → predicts attack type with confidence score
-Probe Detection: 92%
-R2L Detection: 89%
-U2R Detection: 85%
-Normal Traffic: 97%
-```
 
 ---
 
@@ -372,12 +351,4 @@ Flask API → WebSocket → React Dashboard → Real-time Visualization
 
 ---
 
-## ✨ Summary
 
-This IDS system uses a **trained Random Forest ML model** to detect network attacks with **94% accuracy**. The dashboard provides real-time visualization of detected threats with confidence scores. Perfect for demonstrating applied machine learning in cybersecurity!
-
-**Start with:** `python app.py` → `npm run dev` → `python demo_dataset_runner.py`
-
----
-
-**Created for Semester 5 - Network Security & Intrusion Detection**
