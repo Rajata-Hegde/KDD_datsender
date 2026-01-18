@@ -28,24 +28,28 @@ export default function App() {
       
       <Header toggleMenu={() => setMenuOpen(!menuOpen)}/>
 
-      <main className="flex-grow">
-        {/* 3. UPDATED SWITCH LOGIC */}
-        {activePage === "Dashboard" ? (
-          <Dashboard />
-        ) : activePage === "Model Performance" ? (
-          <ModelPerformance />
-        ) : activePage === "ML Features" ? (
-          <MLFeatures />
-        ) : activePage === "About System" ? (
-          <AboutSystem />
-        ) : activePage === "Attack Reports" ? ( // ENSURE THIS MATCHES SIDEBAR STRING
-          <AttackReport />
-        ) : (
-          <div className="p-20 text-center text-gray-500 uppercase tracking-widest">
-            {activePage} :: INITIALIZING...
-          </div>
-        )}
-        <NetworkLogs/>
+      <main className="flex-grow flex flex-col overflow-hidden">
+        <div className="overflow-auto" style={{ minHeight: 0 }}>
+          {/* 3. UPDATED SWITCH LOGIC */}
+          {activePage === "Dashboard" ? (
+            <Dashboard />
+          ) : activePage === "Model Performance" ? (
+            <ModelPerformance />
+          ) : activePage === "ML Features" ? (
+            <MLFeatures />
+          ) : activePage === "About System" ? (
+            <AboutSystem />
+          ) : activePage === "Attack Reports" ? ( // ENSURE THIS MATCHES SIDEBAR STRING
+            <AttackReport />
+          ) : (
+            <div className="p-20 text-center text-gray-500 uppercase tracking-widest">
+              {activePage} :: INITIALIZING...
+            </div>
+          )}
+        </div>
+        <div className="flex-shrink-0 border-t-4 border-cyan-500/30" style={{ resize: 'vertical', overflow: 'auto', minHeight: '200px', maxHeight: '40vh', height: '280px' }}>
+          <NetworkLogs/>
+        </div>
       </main>
 
       <Footer/>

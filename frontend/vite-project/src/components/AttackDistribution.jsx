@@ -7,6 +7,7 @@ export default function AttackDistribution() {
   const [distribution, setDistribution] = useState({});
   const [totalAttacks, setTotalAttacks] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [hoveredSlice, setHoveredSlice] = useState(null);
 
   useEffect(() => {
     // Fetch initial stats
@@ -65,14 +66,14 @@ export default function AttackDistribution() {
     const endRad = (endAngle * Math.PI) / 180;
 
     // Calculate path
-    const radius = 80;
-    const x1 = 100 + radius * Math.cos(startRad);
-    const y1 = 100 + radius * Math.sin(startRad);
-    const x2 = 100 + radius * Math.cos(endRad);
-    const y2 = 100 + radius * Math.sin(endRad);
+    const radius = 100;
+    const x1 = 120 + radius * Math.cos(startRad);
+    const y1 = 120 + radius * Math.sin(startRad);
+    const x2 = 120 + radius * Math.cos(endRad);
+    const y2 = 120 + radius * Math.sin(endRad);
 
     const largeArc = sliceAngle > 180 ? 1 : 0;
-    const path = `M 100 100 L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+    const path = `M 120 120 L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
 
     currentAngle = endAngle;
 
@@ -81,7 +82,7 @@ export default function AttackDistribution() {
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-md p-6 shadow-lg h-full flex flex-col">
-      <h3 className="text-sm mb-4 text-cyan-300 font-semibold">🎯 Attack Distribution</h3>
+      <h3 className="text-sm mb-4 text-cyan-300 font-semibold">Attack Distribution</h3>
 
       {loading ? (
         <div className="flex-1 flex items-center justify-center text-gray-400 text-xs">
@@ -94,19 +95,32 @@ export default function AttackDistribution() {
       ) : (
         <div className="flex-1 flex flex-col gap-4">
           {/* Pie Chart */}
-          <div className="flex justify-center">
-            <svg width="200" height="200" viewBox="0 0 200 200" className="drop-shadow-lg">
+          <div className="flex justify-center relative">
+            <svg width="240" height="240" viewBox="0 0 240 240" className="drop-shadow-lg">
               {slices.map((slice, idx) => (
                 <path
                   key={idx}
                   d={slice.path}
                   fill={slice.color}
                   stroke="rgba(0,0,0,0.3)"
-                  strokeWidth="1"
-                  className="hover:opacity-80 transition"
+                  strokeWidth="2"
+                  className="hover:opacity-80 transition cursor-pointer"
+                  onMouseEnter={() => setHoveredSlice(slice)}
+                  onMouseLeave={() => setHoveredSlice(null)}
                 />
               ))}
             </svg>
+            
+            {/* Hover Tooltip */}
+            {hoveredSlice && (
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/90 border border-cyan-500/50 rounded-lg p-3 text-center pointer-events-none z-10">
+                <p className="text-xs text-gray-400 mb-1">Attack Type</p>
+                <p className="text-lg font-bold text-cyan-300">{hoveredSlice.type}</p>
+                <p className="text-xs text-gray-300 mt-1">
+                  {hoveredSlice.count} attacks ({hoveredSlice.percentage}%)
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Legend */}

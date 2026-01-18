@@ -34,7 +34,7 @@ export default function NetworkLogs() {
   };
 
   return (
-    <div className="bg-[#050d10] text-[#00ffc8] p-6 rounded-2xl border border-cyan-500/30 shadow-[0_0_30px_rgba(0,255,255,0.15)]">
+    <div className="bg-[#050d10] text-[#00ffc8] p-6 rounded-t-2xl border border-cyan-500/30 shadow-[0_0_30px_rgba(0,255,255,0.15)] h-full flex flex-col overflow-hidden">
       {selectedLog ? (
         // Detailed View
         <DetailedLogView log={selectedLog} onBack={() => setSelectedLog(null)} />
@@ -78,18 +78,17 @@ export default function NetworkLogs() {
           </div>
 
           {/* Header Row */}
-          <div className="grid grid-cols-12 gap-2 mb-2 text-xs font-semibold text-gray-400 border-b border-gray-700 pb-2">
+          <div className="grid grid-cols-11 gap-2 mb-2 text-xs font-semibold text-gray-400 border-b border-gray-700 pb-2">
             <div className="col-span-2">Time</div>
             <div className="col-span-2">Source IP</div>
             <div className="col-span-2">Dest IP</div>
-            <div className="col-span-1">Protocol</div>
+            <div className="col-span-2">Protocol</div>
             <div className="col-span-1">Length</div>
             <div className="col-span-2">Attack Type</div>
-            <div className="col-span-2">Confidence</div>
           </div>
 
           {/* Logs */}
-          <div className="max-h-96 overflow-y-auto space-y-1">
+          <div className="flex-1 overflow-y-auto space-y-1">
             {filteredLogs.length === 0 ? (
               <div className="text-center text-gray-400 text-sm py-4">
                 No logs to display
@@ -99,7 +98,7 @@ export default function NetworkLogs() {
                 <div
                   key={i}
                   onClick={() => setSelectedLog(log)}
-                  className={`grid grid-cols-12 gap-2 p-2 rounded border text-xs transition cursor-pointer ${getRowColor(
+                  className={`grid grid-cols-11 gap-2 p-2 rounded border text-xs transition cursor-pointer ${getRowColor(
                     log
                   )}`}
                 >
@@ -112,27 +111,14 @@ export default function NetworkLogs() {
                   <div className="col-span-2 font-mono text-xs truncate text-cyan-300">
                     {log.dst_ip}
                   </div>
-                  <div className="col-span-1 uppercase text-blue-300 font-semibold">
+                  <div className="col-span-2 uppercase text-blue-300 font-semibold">
                     {log.protocol}
                   </div>
                   <div className="col-span-1 text-gray-300">{log.length}B</div>
                   <div className={`col-span-2 font-semibold ${getTextColor(log)}`}>
                     {log.is_attack ? log.attack_type.toUpperCase() : "NORMAL"}
                   </div>
-                  <div className="col-span-2 flex items-center gap-1">
-                    {log.is_attack ? (
-                      <>
-                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
-                        <span className="text-red-400 font-semibold">{log.confidence}%</span>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                        <span className="text-green-400 text-xs">Trusted</span>
-                      </>
-                    )}
-                  </div>
-                  <div className="col-span-12 text-right text-xs text-gray-500">
+                  <div className="col-span-11 text-right text-xs text-gray-500">
                     Click for details...
                   </div>
                 </div>

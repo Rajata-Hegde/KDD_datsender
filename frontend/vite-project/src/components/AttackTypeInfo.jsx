@@ -30,74 +30,92 @@ export default function AttackTypeInfo() {
 
   const getAttackEmoji = (category) => {
     const emojis = {
-      DoS: "🌊",
-      Probe: "🔍",
-      R2L: "🚪",
-      U2R: "👑",
-      Unknown: "❓",
-      normal: "✓",
+      DoS: "",
+      Probe: "",
+      R2L: "",
+      U2R: "",
+      Unknown: "",
+      normal: "",
     };
-    return emojis[category] || "⚠️";
+    return emojis[category] || "";
   };
 
   return (
-    <div className="rounded-2xl border border-red-500/30 bg-black/40 backdrop-blur-xl p-4 overflow-y-auto shadow-[0_0_25px_rgba(255,0,0,0.15)] h-full">
+    <div 
+      className="rounded-2xl border border-red-500/30 bg-black/40 backdrop-blur-xl p-4 shadow-[0_0_25px_rgba(255,0,0,0.15)]"
+      style={{ 
+        height: '100%',      // Fill the grid cell
+        display: 'flex', 
+        flexDirection: 'column',
+        position: 'relative', // Necessary for the absolute inner container
+        minHeight: '400px'    // Adjust this to match your Pie Chart's height
+      }}
+    >
+      <style>{`
+        .scroll-area {
+          position: absolute;
+          top: 60px;          /* Space for the header */
+          left: 16px;         /* Match parent padding */
+          right: 16px;        /* Match parent padding */
+          bottom: 16px;       /* Match parent padding */
+          overflow-y: auto;   /* FORCES THE SCROLLBAR */
+          overflow-x: hidden;
+        }
+        .scroll-area::-webkit-scrollbar {
+          width: 6px;
+        }
+        .scroll-area::-webkit-scrollbar-track {
+          background: rgba(255, 0, 0, 0.05);
+        }
+        .scroll-area::-webkit-scrollbar-thumb {
+          background: rgba(255, 0, 0, 0.4);
+          border-radius: 10px;
+        }
+      `}</style>
+      
       <h2 className="text-lg font-semibold text-red-400 mb-3 flex items-center gap-2">
         <span className="animate-pulse text-red-500">●</span>
         Detected Attacks
       </h2>
 
-      <div className="space-y-2">
-        {attacks.length === 0 ? (
-          <div className="text-gray-400 text-xs italic text-center py-4">
-            No attacks detected yet...
-          </div>
-        ) : (
-          attacks.map((attack, idx) => (
-            <div
-              key={idx}
-              className="bg-red-500/5 border-l-4 border-red-500 p-3 rounded text-xs hover:bg-red-500/10 transition"
-            >
-              {/* Header with emoji and attack type */}
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-semibold flex items-center gap-2">
-                  <span className="text-lg">
-                    {getAttackEmoji(attack.attack_category)}
-                  </span>
-                  <span className={getAttackColor(attack.attack_type)}>
+      {/* This container is locked to the edges of the card */}
+      <div className="scroll-area">
+        <div className="flex flex-col gap-2">
+          {attacks.length === 0 ? (
+            <div className="text-gray-400 text-xs italic text-center py-4">
+              No attacks detected yet...
+            </div>
+          ) : (
+            attacks.map((attack, idx) => (
+              <div
+                key={idx}
+                className="bg-red-500/5 border-l-4 border-red-500 p-3 rounded text-xs hover:bg-red-500/10 transition"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className={`font-bold ${getAttackColor(attack.attack_type)}`}>
                     {attack.attack_type.toUpperCase()}
                   </span>
-                </span>
-                <span className="text-red-300 font-bold">
-                  {attack.confidence}%
-                </span>
-              </div>
-
-              {/* IP addresses and protocol */}
-              <div className="text-gray-300 text-xs mb-1">
-                <div className="truncate">
-                  🔗 {attack.src_ip} → {attack.dst_ip}
+                  <span className="text-gray-500 text-[10px]">
+                    {new Date(attack.timestamp).toLocaleTimeString()}
+                  </span>
                 </div>
-                <div className="text-gray-400">
-                  📡 {attack.protocol} | {attack.length} bytes
+                <div className="text-gray-300 font-mono text-[11px]">
+                  {attack.src_ip} → {attack.dst_ip}
+                </div>
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-gray-400 text-[10px]">
+                    {attack.protocol} | {attack.length} B
+                  </span>
+                  <span className="bg-red-900/40 text-red-200 px-2 py-0.5 rounded text-[9px] border border-red-700/30">
+                    {attack.attack_category}
+                  </span>
                 </div>
               </div>
-
-              {/* Timestamp */}
-              <div className="text-gray-500 text-xs">
-                🕐 {new Date(attack.timestamp).toLocaleTimeString()}
-              </div>
-
-              {/* Category badge */}
-              <div className="mt-2">
-                <span className="inline-block bg-red-900/40 text-red-200 px-2 py-1 rounded text-xs border border-red-700/30">
-                  {attack.attack_category}
-                </span>
-              </div>
-            </div>
-          ))
-        )}
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
 }
+

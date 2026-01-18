@@ -122,28 +122,39 @@ def process_packet_data(data, socketio):
 def start_mqtt(socketio):
     def on_message(client, userdata, msg):
         try:
+            print(f"📨 MQTT message received on topic {msg.topic}")
             data = json.loads(msg.payload.decode())
+            print(f"📦 Processing packet: {data.get('src_ip')} → {data.get('dst_ip')}")
             process_packet_data(data, socketio)
         except json.JSONDecodeError:
             print(f"Invalid JSON received: {msg.payload}")
         except Exception as e:
             print(f"Error processing message: {e}")
 
+    def on_connect(client, userdata, flags, rc):
+        if rc == 0:
+            print(f"✅ MQTT Connected successfully")
+            client.subscribe("nids/unique123/live_packets")
+            print(f"✅ Subscribed to nids/unique123/live_packets")
+        else:
+            print(f"❌ MQTT Connection failed with code {rc}")
+
     client = mqtt.Client()
     client.on_message = on_message
+    client.on_connect = on_connect
 
     def try_connect():
         for attempt in range(1, 6):
             try:
+                print(f"🔗 MQTT connect attempt {attempt}/5 to broker.hivemq.com:1883...")
                 client.connect("broker.hivemq.com", 1883, 60)
-                client.subscribe("nids/live_packets")
                 client.loop_start()
-                print(f"MQTT connected on attempt {attempt}")
+                print(f"✅ MQTT loop started")
                 return
             except Exception as e:
-                print(f"MQTT connect attempt {attempt} failed: {e}")
+                print(f"❌ MQTT connect attempt {attempt} failed: {e}")
                 time.sleep(5)
-        print("MQTT: all connect attempts failed — continuing without MQTT")
+        print("❌ MQTT: all connect attempts failed — continuing without MQTT")
 
     threading.Thread(target=try_connect, daemon=True).start()
 

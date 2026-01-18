@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
-import ChatbotWidget from "../components/ChatbotWidget";
+//import ChatbotWidget from "../components/ChatbotWidget";
 import AttackDistribution from "../components/AttackDistribution";
 import AttackTypeInfo from "../components/AttackTypeInfo";
 import MLFeaturesInfo from "../components/MLFeaturesInfo";
@@ -43,11 +43,11 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-black text-white p-6">
+    <div className="bg-gradient-to-br from-black via-slate-900 to-black text-white p-6 flex flex-col">
       {/* HEADER */}
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-widest text-cyan-400">
-          AI-BASED NETWORK INTRUSION MONITOR
+          AnomalyX Monitor
         </h1>
         <span className="flex items-center gap-2 text-sm text-green-400">
           <span className="h-2 w-2 rounded-full bg-green-400 animate-ping"></span>
@@ -56,11 +56,11 @@ export default function Dashboard() {
       </div>
 
       {/* MAIN GRID */}
-      <div className="grid grid-cols-12 gap-4 h-[85vh]">
+      <div className="grid grid-cols-12 gap-4 overflow-hidden" style={{ gridAutoRows: 'minmax(0, 1fr)' }}>
         {/* LEFT - STATS & CHARTS */}
-        <div className="col-span-3 flex flex-col gap-4">
+        <div className="col-span-4 flex flex-col gap-4 h-full overflow-hidden" style={{ minHeight: 0 }}>
           {/* Key Metrics */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 flex-shrink-0">
             <LiveMetric
               label="Packets/sec"
               value={metrics.packets_per_sec}
@@ -81,19 +81,28 @@ export default function Dashboard() {
           </div>
 
           {/* Attack Distribution Pie Chart */}
-          <AttackDistribution />
+          <div className="flex-1 min-h-0 overflow-hidden" style={{ minHeight: 0 }}>
+            <AttackDistribution />
+          </div>
         </div>
 
-        {/* CENTER - LIVE DATA */}
-        <div className="col-span-6 flex flex-col gap-4">
-          <div className="flex-1 rounded-2xl border border-cyan-500/30 bg-white/5 backdrop-blur-xl p-6 shadow-[0_0_30px_rgba(0,255,255,0.15)]">
+        {/* CENTER - ATTACK LOGS */}
+        <div className="col-span-5 flex flex-col gap-4 h-full overflow-hidden" style={{ minHeight: 0 }}>
+          <div className="flex-1 min-h-0 overflow-hidden h-full" style={{ minHeight: 0 }}>
+            <AttackTypeInfo />
+          </div>
+        </div>
+
+        {/* RIGHT - LIVE DATA */}
+        <div className="col-span-3 flex flex-col gap-4 h-full overflow-hidden" style={{ minHeight: 0 }}>
+          <div className="rounded-2xl border border-cyan-500/30 bg-white/5 backdrop-blur-xl p-6 shadow-[0_0_30px_rgba(0,255,255,0.15)] flex-1 overflow-auto h-full">
             <h2 className="text-xl font-semibold text-cyan-300 mb-4">
-              📊 Network Statistics
+              Network Statistics
             </h2>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
               <StatCard
-                title="Detection Rate"
+                title="Attack Rate"
                 value={
                   metrics.total_packets > 0
                     ? (
@@ -123,25 +132,12 @@ export default function Dashboard() {
                     {new Date().toLocaleTimeString()}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Attack Categories Detected:</span>
-                  <span className="text-yellow-300">DoS, Probe, R2L</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Average Confidence:</span>
-                  <span className="text-green-300">85.3%</span>
-                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* RIGHT - ATTACK LOGS */}
-        <div className="col-span-3">
-          <AttackTypeInfo />
-        </div>
-
-        <ChatbotWidget />
+        {/* <ChatbotWidget /> */}
       </div>
     </div>
   );
@@ -165,7 +161,7 @@ const LiveMetric = ({ label, value, alert }) => (
 const StatCard = ({ title, value, unit, color }) => (
   <div className="rounded-lg border border-gray-700/50 bg-gray-800/20 p-4">
     <p className="text-xs text-gray-400 mb-2">{title}</p>
-    <p className={`text-3xl font-bold ${color}`}>
+    <p className={`text-2xl font-bold ${color}`}>
       {value}
       <span className="text-lg">{unit}</span>
     </p>

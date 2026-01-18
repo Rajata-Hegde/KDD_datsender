@@ -13,7 +13,7 @@ export default function Header({ toggleMenu }) {
         </button>
 
         <h1 className="text-lg font-bold tracking-widest text-cyan-400">
-          AI-NIDS CONTROL PANEL
+          ANOMALYX CONTROL PANEL
         </h1>
       </div>
 
